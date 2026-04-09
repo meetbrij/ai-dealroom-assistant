@@ -1,5 +1,5 @@
-import { useNavigate, useParams } from 'react-router-dom';
-import { getDealById, stages } from '../data/deals';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { getDealById, stages, deals } from '../data/deals';
 
 const stageColors = [
   'bg-slate-100 text-slate-600',
@@ -122,10 +122,81 @@ function ActionTile({ emoji, label, description, accentColor, onClick }) {
   );
 }
 
+// Build a dynamic deal object from New Deal Setup form data,
+// falling back to Project Falcon dummy data for everything not supplied.
+function buildDynamicDeal(formState) {
+  const base = deals[0]; // Project Falcon as fallback template
+  const initials = (name) =>
+    name.trim().split(' ').map((w) => w[0].toUpperCase()).join('').slice(0, 2);
+
+  return {
+    ...base,
+    id: 'new-deal',
+    name: formState.dealName || 'New Deal',
+    company: formState.companyName || base.company,
+    sector: formState.sector || base.sector,
+    dealType: formState.dealType || base.dealType,
+    dealSize: formState.estimatedValue || base.dealSize,
+    daysActive: 0,
+    lastActivity: 'Just now',
+    nextMeeting: 'TBD',
+    pendingActions: 0,
+    team: formState.team?.length
+      ? formState.team.map((m) => ({ ...m, initials: m.initials || initials(m.name) }))
+      : base.team,
+    snapshot: {
+      ...base.snapshot,
+      source: formState.uploadedFiles?.length
+        ? formState.uploadedFiles[0]
+        : 'New Deal Setup',
+      overview:
+        `${formState.companyName || base.company} is a ${formState.sector || base.sector} company engaged in a ${formState.dealType || base.dealType} transaction${formState.estimatedValue ? ` valued at ${formState.estimatedValue}` : ''}. ` +
+        'AI-generated company context will appear here once documents are processed. The snapshot below is pre-populated with illustrative data from comparable deals.',
+      metrics: formState.estimatedValue
+        ? base.snapshot.metrics.map((m) =>
+            m.label === 'Est. Deal Size' ? { ...m, value: formState.estimatedValue } : m
+          )
+        : base.snapshot.metrics,
+    },
+    documents: formState.uploadedFiles?.length
+      ? formState.uploadedFiles.map((name, i) => ({
+          id: `doc-new-${i}`,
+          name,
+          type: name.endsWith('.docx') ? 'DOCX' : 'PDF',
+          tag: i === 0 ? 'Teaser' : i === 1 ? 'Financials' : 'CIM',
+          size: '—',
+          uploadedBy: formState.team?.[0]?.name || 'You',
+        }))
+      : base.documents,
+    activity: [
+      {
+        id: 'act-new-1',
+        type: 'ai',
+        message: `Deal room created for "${formState.dealName || 'New Deal'}". AI has pre-populated the company snapshot.`,
+        actor: 'AI Assistant',
+        time: 'Just now',
+      },
+      ...(formState.uploadedFiles?.length
+        ? [{
+            id: 'act-new-2',
+            type: 'upload',
+            message: `${formState.uploadedFiles.length} document(s) uploaded and processed.`,
+            actor: formState.team?.[0]?.name || 'You',
+            time: 'Just now',
+          }]
+        : []),
+    ],
+  };
+}
+
 export default function DealRoomHome() {
   const navigate = useNavigate();
   const { dealId } = useParams();
-  const deal = getDealById(dealId);
+  const location = useLocation();
+
+  const deal = dealId === 'new-deal' && location.state
+    ? buildDynamicDeal(location.state)
+    : getDealById(dealId);
 
   if (!deal) {
     return (
