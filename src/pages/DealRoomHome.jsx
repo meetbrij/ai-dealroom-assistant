@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { getDealById, stages, deals } from '../data/deals';
 
@@ -69,7 +70,7 @@ const docTagColors = {
   'IC Memo': 'bg-slate-100 text-slate-600',
 };
 
-function StagePipeline({ stageIndex }) {
+function StagePipeline({ stageIndex, completionPct }) {
   return (
     <div className="flex items-center gap-0">
       {stages.map((stage, i) => {
@@ -77,19 +78,29 @@ function StagePipeline({ stageIndex }) {
         const isPast = i < stageIndex;
         return (
           <div key={stage} className="flex items-center">
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+            <div className={`flex flex-col px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
               isActive
                 ? `${stageColors[i]} ring-2 ring-offset-1 ring-blue-300`
                 : isPast
                 ? 'bg-slate-100 text-slate-400'
                 : 'bg-slate-50 text-slate-300'
             }`}>
-              {isPast && (
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="flex items-center gap-1.5">
+                {isPast && (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {stage}
+              </div>
+              {isActive && completionPct !== undefined && (
+                <div className="w-full mt-1 h-1 rounded-full bg-blue-200">
+                  <div
+                    className="h-1 rounded-full bg-blue-500 transition-all duration-500"
+                    style={{ width: `${completionPct}%` }}
+                  />
+                </div>
               )}
-              {stage}
             </div>
             {i < stages.length - 1 && (
               <div className={`w-5 h-px mx-1 ${i < stageIndex ? 'bg-slate-300' : 'bg-slate-200'}`} />
@@ -101,14 +112,21 @@ function StagePipeline({ stageIndex }) {
   );
 }
 
-function ActionTile({ emoji, label, description, accentColor, onClick }) {
+function ActionTile({ emoji, label, description, accentColor, onClick, tileStatus }) {
   return (
     <button
       onClick={onClick}
       className="w-full text-left bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-md transition-all group"
     >
-      <div className={`w-10 h-10 rounded-lg ${accentColor} flex items-center justify-center text-xl mb-3`}>
-        {emoji}
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-10 h-10 rounded-lg ${accentColor} flex items-center justify-center text-xl`}>
+          {emoji}
+        </div>
+        {tileStatus && (
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${tileStatus.colorClass}`}>
+            {tileStatus.label}
+          </span>
+        )}
       </div>
       <p className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors mb-1">{label}</p>
       <p className="text-xs text-slate-500 leading-relaxed">{description}</p>
@@ -141,6 +159,14 @@ function buildDynamicDeal(formState) {
     lastActivity: 'Just now',
     nextMeeting: 'TBD',
     pendingActions: 0,
+    stageChecklist: base.stageChecklist,
+    tileMeta: {
+      prepSheet:   { status: 'Not Started' },
+      meetingRoom: { status: 'Not Started', meetingCount: 0 },
+      actionItems: { open: 0, inProgress: 0, done: 0 },
+      icMemo:      { status: 'Not Started', version: null },
+    },
+    advanceCondition: base.advanceCondition,
     team: formState.team?.length
       ? formState.team.map((m) => ({ ...m, initials: m.initials || initials(m.name) }))
       : base.team,
@@ -213,6 +239,59 @@ export default function DealRoomHome() {
 
   const { snapshot, documents, activity } = deal;
 
+  // ── Stage progression state ──
+  const [currentStageIndex, setCurrentStageIndex] = useState(deal.stageIndex);
+  const [gates, setGates] = useState(deal.stageChecklist ?? []);
+  const [advanced, setAdvanced] = useState(false);
+
+  const doneGates = gates.filter(g => g.done).length;
+  const totalGates = gates.length;
+  const completionPct = totalGates > 0 ? Math.round((doneGates / totalGates) * 100) : 100;
+  const isReady = totalGates > 0 && doneGates === totalGates;
+  const nextStageName = stages[currentStageIndex + 1] ?? null;
+
+  function toggleGate(id) {
+    setGates(prev => prev.map(g => g.id === id ? { ...g, done: !g.done } : g));
+  }
+
+  function handleAdvance() {
+    if (!isReady) return;
+    setCurrentStageIndex(prev => prev + 1);
+    setGates([]);
+    setAdvanced(true);
+  }
+
+  // ── Tile status badges ──
+  function getTileStatus(key) {
+    if (!deal.tileMeta) return null;
+    const m = deal.tileMeta;
+    if (key === 'prepSheet') {
+      return m.prepSheet.status === 'Done'
+        ? { label: 'Done', colorClass: 'bg-green-100 text-green-700' }
+        : m.prepSheet.status === 'In Progress'
+        ? { label: 'In Progress', colorClass: 'bg-blue-100 text-blue-700' }
+        : { label: 'Not Started', colorClass: 'bg-slate-100 text-slate-400' };
+    }
+    if (key === 'meetingRoom') {
+      return m.meetingRoom.status === 'Done'
+        ? { label: `${m.meetingRoom.meetingCount} meeting${m.meetingRoom.meetingCount !== 1 ? 's' : ''} logged`, colorClass: 'bg-green-100 text-green-700' }
+        : { label: 'Not Started', colorClass: 'bg-slate-100 text-slate-400' };
+    }
+    if (key === 'actionItems') {
+      return m.actionItems.open > 0
+        ? { label: `${m.actionItems.open} open`, colorClass: 'bg-amber-100 text-amber-700' }
+        : { label: 'All done', colorClass: 'bg-green-100 text-green-700' };
+    }
+    if (key === 'icMemo') {
+      return m.icMemo.status === 'Done'
+        ? { label: m.icMemo.version ?? 'Done', colorClass: 'bg-green-100 text-green-700' }
+        : m.icMemo.status === 'In Progress'
+        ? { label: m.icMemo.version ?? 'In Progress', colorClass: 'bg-blue-100 text-blue-700' }
+        : { label: 'Not Started', colorClass: 'bg-slate-100 text-slate-400' };
+    }
+    return null;
+  }
+
   const actionTiles = [
     {
       emoji: '📋',
@@ -220,6 +299,7 @@ export default function DealRoomHome() {
       description: 'AI-generated briefing doc — company context, comps, talking points, and open questions.',
       accentColor: 'bg-blue-50',
       to: `/deals/${deal.id}/prep-sheet`,
+      tileStatus: getTileStatus('prepSheet'),
     },
     {
       emoji: '🎙️',
@@ -227,6 +307,7 @@ export default function DealRoomHome() {
       description: 'Upload or paste a transcript — AI extracts decisions, concerns, and commitments.',
       accentColor: 'bg-amber-50',
       to: `/deals/${deal.id}/meeting-room`,
+      tileStatus: getTileStatus('meetingRoom'),
     },
     {
       emoji: '✅',
@@ -234,6 +315,7 @@ export default function DealRoomHome() {
       description: 'Track all open tasks, owners, and deadlines from meetings and deal activity.',
       accentColor: 'bg-green-50',
       to: `/deals/${deal.id}/action-items`,
+      tileStatus: getTileStatus('actionItems'),
     },
     {
       emoji: '📄',
@@ -241,6 +323,7 @@ export default function DealRoomHome() {
       description: 'AI-assembled Investment Committee memo from all deal signals gathered so far.',
       accentColor: 'bg-purple-50',
       to: `/deals/${deal.id}/ic-memo`,
+      tileStatus: getTileStatus('icMemo'),
     },
   ];
 
@@ -262,8 +345,8 @@ export default function DealRoomHome() {
             <div>
               <div className="flex items-center gap-2.5">
                 <h1 className="text-lg font-bold text-slate-900">{deal.name}</h1>
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${stageColors[deal.stageIndex]}`}>
-                  {deal.stage}
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${stageColors[currentStageIndex]}`}>
+                  {advanced ? (stages[currentStageIndex] ?? deal.stage) : deal.stage}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">{deal.company} · {deal.sector} · Active {deal.daysActive} days</p>
@@ -292,7 +375,7 @@ export default function DealRoomHome() {
 
         {/* Stage pipeline */}
         <div className="mt-3">
-          <StagePipeline stageIndex={deal.stageIndex} />
+          <StagePipeline stageIndex={currentStageIndex} completionPct={completionPct} />
         </div>
       </div>
 
@@ -374,10 +457,87 @@ export default function DealRoomHome() {
                   key={tile.label}
                   {...tile}
                   onClick={() => navigate(tile.to)}
+                  tileStatus={tile.tileStatus}
                 />
               ))}
             </div>
           </div>
+
+          {/* Stage Advance CTA */}
+          {nextStageName && !advanced && (
+            <div className={`rounded-2xl border p-5 ${
+              isReady
+                ? 'bg-green-50 border-green-200'
+                : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                    isReady ? 'bg-green-100' : 'bg-amber-100'
+                  }`}>
+                    {isReady ? (
+                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isReady ? 'text-green-800' : 'text-slate-700'}`}>
+                      {isReady ? 'Stage complete — all gates cleared' : 'Stage in progress'}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${isReady ? 'text-green-700' : 'text-slate-500'}`}>
+                      {isReady
+                        ? `Ready to advance to ${nextStageName}`
+                        : deal.advanceCondition ?? `Complete checklist items before moving to ${nextStageName}`}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleAdvance}
+                  disabled={!isReady}
+                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    isReady
+                      ? 'bg-blue-700 hover:bg-blue-800 text-white'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  Move to {nextStageName}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Post-advance success banner */}
+          {advanced && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-green-800">
+                    Deal advanced to {stages[currentStageIndex]}
+                  </p>
+                  <p className="text-xs text-green-700 mt-0.5">Stage updated · Checklist reset for next phase</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAdvanced(false)}
+                className="text-green-600 hover:text-green-800 transition-colors text-xs font-medium"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {/* Document library */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
@@ -418,7 +578,7 @@ export default function DealRoomHome() {
                 { label: 'Deal type', value: deal.dealType },
                 { label: 'Days active', value: `${deal.daysActive} days` },
                 { label: 'Next meeting', value: deal.nextMeeting },
-                { label: 'Pending actions', value: `${deal.pendingActions} open`, highlight: deal.pendingActions > 0 },
+                { label: 'Stage progress', value: `${doneGates} / ${totalGates} gates cleared`, highlight: doneGates < totalGates },
               ].map(({ label, value, highlight }) => (
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-xs text-slate-500">{label}</span>
@@ -427,6 +587,49 @@ export default function DealRoomHome() {
               ))}
             </div>
           </div>
+
+          {/* Stage Readiness */}
+          {gates.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Stage Readiness</h3>
+              <div className="space-y-2.5 mb-4">
+                {gates.map((gate) => (
+                  <button
+                    key={gate.id}
+                    onClick={() => toggleGate(gate.id)}
+                    className="w-full flex items-center gap-2.5 text-left group"
+                  >
+                    <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                      gate.done ? 'bg-green-500' : 'border-2 border-slate-300 group-hover:border-blue-400'
+                    }`}>
+                      {gate.done && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-xs transition-colors ${
+                      gate.done ? 'text-slate-400 line-through' : 'text-slate-700 group-hover:text-slate-900'
+                    }`}>
+                      {gate.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {isReady ? (
+                <div className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-2 flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Ready to advance to next stage
+                </div>
+              ) : (
+                <div className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                  {totalGates - doneGates} item{totalGates - doneGates !== 1 ? 's' : ''} remaining to advance
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Activity feed */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5">

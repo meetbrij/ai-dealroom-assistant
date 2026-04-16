@@ -58,6 +58,23 @@ export const deals = [
       { id: 4, type: 'team', message: 'Rajiv Mehta added as MD', time: '3 hours ago', actor: 'Arjun Nair' },
       { id: 5, type: 'deal', message: 'Deal room created — Project Falcon', time: '3 hours ago', actor: 'Arjun Nair' },
     ],
+
+    stageChecklist: [
+      { id: 'g-1', label: 'Engagement letter signed', done: true },
+      { id: 'g-2', label: 'Audited financials received', done: false },
+      { id: 'g-3', label: 'Board resolution received', done: false },
+      { id: 'g-4', label: 'ROFR clause reviewed by legal', done: false },
+      { id: 'g-5', label: 'CIM structure outline drafted', done: false },
+    ],
+
+    tileMeta: {
+      prepSheet:   { status: 'Done' },
+      meetingRoom: { status: 'Done', meetingCount: 1 },
+      actionItems: { open: 6, inProgress: 1, done: 1 },
+      icMemo:      { status: 'Not Started', version: null },
+    },
+
+    advanceCondition: 'Complete remaining checklist items before moving to Due Diligence',
   },
 
   {
@@ -117,6 +134,25 @@ export const deals = [
       { id: 4, type: 'meeting', message: 'Meeting notes added — Management Presentation Round 2', time: '6 days ago', actor: 'Meera Iyer' },
       { id: 5, type: 'deal', message: 'Deal moved to Due Diligence stage', time: '8 days ago', actor: 'Rajiv Mehta' },
     ],
+
+    stageChecklist: [
+      { id: 'g-1', label: 'Management presentation completed', done: true },
+      { id: 'g-2', label: 'CIM circulated to shortlisted buyers', done: true },
+      { id: 'g-3', label: 'FDA facility inspection resolved', done: false },
+      { id: 'g-4', label: 'Financial model audit complete', done: false },
+      { id: 'g-5', label: 'NDA executed with all shortlisted buyers', done: false },
+      { id: 'g-6', label: 'Legal due diligence checklist closed', done: false },
+      { id: 'g-7', label: 'Key-man retention plan confirmed', done: false },
+    ],
+
+    tileMeta: {
+      prepSheet:   { status: 'Done' },
+      meetingRoom: { status: 'Done', meetingCount: 2 },
+      actionItems: { open: 5, inProgress: 2, done: 3 },
+      icMemo:      { status: 'In Progress', version: 'v2 Draft' },
+    },
+
+    advanceCondition: 'Complete remaining checklist items before moving to IC Approval',
   },
 
   {
@@ -177,6 +213,22 @@ export const deals = [
       { id: 4, type: 'meeting', message: 'Final management presentation completed', time: '8 days ago', actor: 'Priya Sharma' },
       { id: 5, type: 'upload', message: 'GreenBond_TermSheet_v2.docx uploaded', time: '22 days ago', actor: 'Priya Sharma' },
     ],
+
+    stageChecklist: [
+      { id: 'g-1', label: 'IC Memo v3 finalised', done: true },
+      { id: 'g-2', label: 'All DD findings incorporated', done: true },
+      { id: 'g-3', label: 'IC date confirmed with committee', done: false },
+      { id: 'g-4', label: 'Rajasthan DISCOM PPA terms updated', done: false },
+    ],
+
+    tileMeta: {
+      prepSheet:   { status: 'Done' },
+      meetingRoom: { status: 'Done', meetingCount: 3 },
+      actionItems: { open: 1, inProgress: 1, done: 8 },
+      icMemo:      { status: 'Done', version: 'v3 — Final' },
+    },
+
+    advanceCondition: 'Complete remaining checklist items before moving to Closing',
   },
 ];
 
