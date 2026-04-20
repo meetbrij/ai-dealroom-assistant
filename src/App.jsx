@@ -18,7 +18,6 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/deals/new" element={<NewDealSetup />} />
-          <Route path="/deals/new-deal" element={<DealRoomHome />} />
           <Route path="/deals/:dealId" element={<DealRoomHome />} />
           <Route path="/deals/:dealId/prep-sheet" element={<PrepSheet />} />
           <Route path="/deals/:dealId/meeting-room" element={<MeetingRoom />} />

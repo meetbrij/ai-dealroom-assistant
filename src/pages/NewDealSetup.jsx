@@ -263,17 +263,7 @@ export default function NewDealSetup() {
     setProcessing(true);
     // Simulate AI processing, then navigate to the dynamic deal room
     setTimeout(() => {
-      navigate('/deals/new-deal', {
-        state: {
-          dealName,
-          companyName,
-          sector,
-          dealType,
-          estimatedValue,
-          team: teamMembers,
-          uploadedFiles: files.map((f) => f.name),
-        },
-      });
+      navigate('/deals/deal-001');
     }, 3200);
   }
 
