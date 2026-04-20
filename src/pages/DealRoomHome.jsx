@@ -70,6 +70,14 @@ const docTagColors = {
   'IC Memo': 'bg-slate-100 text-slate-600',
 };
 
+// Which stage each tile unlocks at (maps to stageIndex in stages array)
+const TILE_UNLOCK_STAGE = {
+  prepSheet:   1,  // Pitch
+  meetingRoom: 2,  // Diligence
+  actionItems: 2,  // Diligence
+  icMemo:      3,  // IC
+};
+
 function StagePipeline({ stageIndex, completionPct }) {
   return (
     <div className="flex items-center gap-0">
@@ -112,7 +120,25 @@ function StagePipeline({ stageIndex, completionPct }) {
   );
 }
 
-function ActionTile({ emoji, label, description, accentColor, onClick, tileStatus }) {
+function ActionTile({ emoji, label, description, accentColor, onClick, tileStatus, locked, unlocksAt }) {
+  if (locked) {
+    return (
+      <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-5 cursor-not-allowed opacity-60">
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-xl grayscale">
+            {emoji}
+          </div>
+          <svg className="w-4 h-4 text-slate-400 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <p className="text-sm font-bold text-slate-400 mb-1">{label}</p>
+        <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
+        <p className="text-xs text-slate-400 mt-3 font-medium">Unlocks at {unlocksAt} stage</p>
+      </div>
+    );
+  }
+
   return (
     <button
       onClick={onClick}
@@ -250,8 +276,22 @@ export default function DealRoomHome() {
   const isReady = totalGates > 0 && doneGates === totalGates;
   const nextStageName = stages[currentStageIndex + 1] ?? null;
 
+  // Generate Slides state
+  const [slidesState, setSlidesState] = useState('idle'); // 'idle' | 'generating' | 'sent'
+  const [slidesBannerDismissed, setSlidesBannerDismissed] = useState(false);
+
+  // Deal Analysis collapsible sections
+  const [analysisOpen, setAnalysisOpen] = useState({ thesis: true, financial: true, risks: true });
+
   function toggleGate(id) {
     setGates(prev => prev.map(g => g.id === id ? { ...g, done: !g.done } : g));
+  }
+
+  function handleGenerateSlides() {
+    if (slidesState !== 'idle') return;
+    setSlidesState('generating');
+    setSlidesBannerDismissed(false);
+    setTimeout(() => setSlidesState('sent'), 2500);
   }
 
   function handleAdvance() {
@@ -294,14 +334,16 @@ export default function DealRoomHome() {
 
   const actionTiles = [
     {
+      tileKey: 'prepSheet',
       emoji: '📋',
-      label: 'Prep Sheet',
+      label: 'Pre-Meeting Briefing',
       description: 'AI-generated briefing doc — company context, comps, talking points, and open questions.',
       accentColor: 'bg-blue-50',
       to: `/deals/${deal.id}/prep-sheet`,
       tileStatus: getTileStatus('prepSheet'),
     },
     {
+      tileKey: 'meetingRoom',
       emoji: '🎙️',
       label: 'Meeting Room',
       description: 'Upload or paste a transcript — AI extracts decisions, concerns, and commitments.',
@@ -310,6 +352,7 @@ export default function DealRoomHome() {
       tileStatus: getTileStatus('meetingRoom'),
     },
     {
+      tileKey: 'actionItems',
       emoji: '✅',
       label: 'Action Items',
       description: 'Track all open tasks, owners, and deadlines from meetings and deal activity.',
@@ -318,6 +361,7 @@ export default function DealRoomHome() {
       tileStatus: getTileStatus('actionItems'),
     },
     {
+      tileKey: 'icMemo',
       emoji: '📄',
       label: 'IC Memo',
       description: 'AI-assembled Investment Committee memo from all deal signals gathered so far.',
@@ -524,20 +568,185 @@ export default function DealRoomHome() {
             </div>
           </div>
 
-          {/* Four action tiles */}
+          {/* Deal Workflow */}
           <div>
-            <h2 className="text-sm font-semibold text-slate-700 mb-3">Deal Workflow</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-slate-700">Deal Workflow</h2>
+              {currentStageIndex === 1 && (
+                <button
+                  onClick={handleGenerateSlides}
+                  disabled={slidesState !== 'idle'}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
+                    slidesState === 'idle'
+                      ? 'bg-blue-700 hover:bg-blue-800 text-white'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  {slidesState === 'idle' && (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Generate Slides (Pitch Deck)
+                    </>
+                  )}
+                  {slidesState === 'generating' && '⏳ Generating…'}
+                  {slidesState === 'sent' && '✓ Slides Queued'}
+                </button>
+              )}
+            </div>
+
+            {/* Generate Slides banner */}
+            {currentStageIndex === 1 && slidesState !== 'idle' && !slidesBannerDismissed && (
+              <div className={`mb-4 rounded-xl border px-4 py-3 flex items-start justify-between gap-3 ${
+                slidesState === 'generating'
+                  ? 'bg-blue-50 border-blue-200 text-blue-800'
+                  : 'bg-green-50 border-green-200 text-green-800'
+              }`}>
+                <div className="flex items-start gap-2.5">
+                  {slidesState === 'generating' ? (
+                    <svg className="w-4 h-4 mt-0.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  <p className="text-sm leading-snug">
+                    {slidesState === 'generating'
+                      ? 'Pitch Deck generation in progress. Once ready, the pitch deck will be emailed to your account.'
+                      : 'Pitch Deck is being compiled by AI. You\'ll receive an email at arjun.nair@imc.com when it\'s ready.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSlidesBannerDismissed(true)}
+                  className="shrink-0 opacity-50 hover:opacity-100 transition-opacity mt-0.5"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
-              {actionTiles.map((tile) => (
-                <ActionTile
-                  key={tile.label}
-                  {...tile}
-                  onClick={() => navigate(tile.to)}
-                  tileStatus={tile.tileStatus}
-                />
-              ))}
+              {actionTiles.map((tile) => {
+                const unlockIndex = TILE_UNLOCK_STAGE[tile.tileKey];
+                const isLocked = currentStageIndex < unlockIndex;
+                return (
+                  <ActionTile
+                    key={tile.label}
+                    {...tile}
+                    locked={isLocked}
+                    unlocksAt={stages[unlockIndex]}
+                    onClick={isLocked ? undefined : () => navigate(tile.to)}
+                    tileStatus={isLocked ? null : tile.tileStatus}
+                  />
+                );
+              })}
             </div>
           </div>
+
+          {/* Deal Analysis — visible from Diligence stage onwards */}
+          {currentStageIndex >= 2 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-6">
+              <div className="flex items-start justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-sm font-bold text-slate-900">Deal Analysis</h2>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                    AI · {snapshot.confidence} confidence
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400">Source: {snapshot.source}</span>
+              </div>
+
+              {/* Deal Thesis */}
+              <div className="border border-slate-100 rounded-xl mb-3">
+                <button
+                  onClick={() => setAnalysisOpen(prev => ({ ...prev, thesis: !prev.thesis }))}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                >
+                  <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Deal Thesis</span>
+                  <svg className={`w-4 h-4 text-slate-400 transition-transform ${analysisOpen.thesis ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {analysisOpen.thesis && (
+                  <div className="px-4 pb-4">
+                    <ul className="space-y-2">
+                      {snapshot.whyHere.map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-sm text-slate-700">
+                          <svg className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Financial Summary */}
+              <div className="border border-slate-100 rounded-xl mb-3">
+                <button
+                  onClick={() => setAnalysisOpen(prev => ({ ...prev, financial: !prev.financial }))}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                >
+                  <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Financial Summary</span>
+                  <svg className={`w-4 h-4 text-slate-400 transition-transform ${analysisOpen.financial ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {analysisOpen.financial && (
+                  <div className="px-4 pb-4">
+                    <div className="grid grid-cols-3 gap-2">
+                      {snapshot.metrics.map(({ label, value }) => (
+                        <div key={label} className="bg-slate-50 rounded-lg px-3 py-2.5 text-center">
+                          <p className="text-base font-bold text-slate-900">{value}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Risk Flags */}
+              <div className="border border-slate-100 rounded-xl">
+                <button
+                  onClick={() => setAnalysisOpen(prev => ({ ...prev, risks: !prev.risks }))}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                >
+                  <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Risk Flags</span>
+                  <svg className={`w-4 h-4 text-slate-400 transition-transform ${analysisOpen.risks ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {analysisOpen.risks && (
+                  <div className="px-4 pb-4 space-y-2">
+                    {snapshot.watchOuts.map((item, i) => (
+                      <div key={item} className={`flex items-start gap-2.5 text-sm rounded-lg px-3 py-2 ${
+                        i === 0 ? 'bg-red-50 text-red-800' : 'bg-amber-50 text-amber-800'
+                      }`}>
+                        <svg className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${i === 0 ? 'text-red-500' : 'text-amber-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Document library */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
