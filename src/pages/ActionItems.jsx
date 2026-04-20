@@ -273,18 +273,6 @@ export default function ActionItems() {
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="pb-8 flex justify-end">
-          <button
-            onClick={() => navigate(`/deals/${dealId}/ic-memo`)}
-            className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors"
-          >
-            Go to IC Memo
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
   );

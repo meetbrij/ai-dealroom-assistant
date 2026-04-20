@@ -137,15 +137,6 @@ export default function PrepSheet() {
             </svg>
             Export PDF
           </button>
-          <button
-            onClick={() => navigate(`/deals/${dealId}/meeting-room`)}
-            className="flex items-center gap-1.5 text-sm font-semibold bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 py-2 transition-colors"
-          >
-            Go to Meeting Room
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -328,18 +319,6 @@ export default function PrepSheet() {
           </SectionCard>
         </div>
 
-        {/* CTA */}
-        <div className="pb-8 flex justify-end">
-          <button
-            onClick={() => navigate(`/deals/${dealId}/meeting-room`)}
-            className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
-            Go to Meeting Room
-          </button>
-        </div>
 
       </div>
     </div>

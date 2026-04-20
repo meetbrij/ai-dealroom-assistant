@@ -526,12 +526,6 @@ export default function MeetingRoom() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
-              <button
-                onClick={() => navigate(`/deals/${dealId}/ic-memo`)}
-                className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
-              >
-                Update IC Memo
-              </button>
             </div>
           </div>
         </div>
