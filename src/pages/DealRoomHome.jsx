@@ -385,6 +385,82 @@ export default function DealRoomHome() {
         {/* Main column */}
         <div className="flex-1 min-w-0 space-y-6">
 
+          {/* Stage Advance CTA */}
+          {nextStageName && !advanced && (
+            <div className={`rounded-2xl border p-5 ${
+              isReady
+                ? 'bg-green-50 border-green-200'
+                : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                    isReady ? 'bg-green-100' : 'bg-amber-100'
+                  }`}>
+                    {isReady ? (
+                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isReady ? 'text-green-800' : 'text-slate-700'}`}>
+                      {isReady ? 'Stage complete — all gates cleared' : 'Stage in progress'}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${isReady ? 'text-green-700' : 'text-slate-500'}`}>
+                      {isReady
+                        ? `Ready to advance to ${nextStageName}`
+                        : deal.advanceCondition ?? `Complete checklist items before moving to ${nextStageName}`}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleAdvance}
+                  disabled={!isReady}
+                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    isReady
+                      ? 'bg-blue-700 hover:bg-blue-800 text-white'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  Move to {nextStageName}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Post-advance success banner */}
+          {advanced && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-green-800">
+                    Deal advanced to {stages[currentStageIndex]}
+                  </p>
+                  <p className="text-xs text-green-700 mt-0.5">Stage updated · Checklist reset for next phase</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAdvanced(false)}
+                className="text-green-600 hover:text-green-800 transition-colors text-xs font-medium"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           {/* Company Snapshot card */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <div className="flex items-start justify-between mb-4">
@@ -463,82 +539,6 @@ export default function DealRoomHome() {
             </div>
           </div>
 
-          {/* Stage Advance CTA */}
-          {nextStageName && !advanced && (
-            <div className={`rounded-2xl border p-5 ${
-              isReady
-                ? 'bg-green-50 border-green-200'
-                : 'bg-slate-50 border-slate-200'
-            }`}>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                    isReady ? 'bg-green-100' : 'bg-amber-100'
-                  }`}>
-                    {isReady ? (
-                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    )}
-                  </div>
-                  <div>
-                    <p className={`text-sm font-semibold ${isReady ? 'text-green-800' : 'text-slate-700'}`}>
-                      {isReady ? 'Stage complete — all gates cleared' : 'Stage in progress'}
-                    </p>
-                    <p className={`text-xs mt-0.5 ${isReady ? 'text-green-700' : 'text-slate-500'}`}>
-                      {isReady
-                        ? `Ready to advance to ${nextStageName}`
-                        : deal.advanceCondition ?? `Complete checklist items before moving to ${nextStageName}`}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleAdvance}
-                  disabled={!isReady}
-                  className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    isReady
-                      ? 'bg-blue-700 hover:bg-blue-800 text-white'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  Move to {nextStageName}
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Post-advance success banner */}
-          {advanced && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-green-800">
-                    Deal advanced to {stages[currentStageIndex]}
-                  </p>
-                  <p className="text-xs text-green-700 mt-0.5">Stage updated · Checklist reset for next phase</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setAdvanced(false)}
-                className="text-green-600 hover:text-green-800 transition-colors text-xs font-medium"
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-
           {/* Document library */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
@@ -569,29 +569,10 @@ export default function DealRoomHome() {
         {/* Right sidebar */}
         <div className="w-72 shrink-0 space-y-4">
 
-          {/* Deal Status */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Status</h3>
-            <div className="space-y-3">
-              {[
-                { label: 'Deal size', value: deal.dealSize },
-                { label: 'Deal type', value: deal.dealType },
-                { label: 'Days active', value: `${deal.daysActive} days` },
-                { label: 'Next meeting', value: deal.nextMeeting },
-                { label: 'Stage progress', value: `${doneGates} / ${totalGates} gates cleared`, highlight: doneGates < totalGates },
-              ].map(({ label, value, highlight }) => (
-                <div key={label} className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500">{label}</span>
-                  <span className={`text-xs font-semibold ${highlight ? 'text-amber-600' : 'text-slate-800'}`}>{value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Stage Readiness */}
+          {/* Stage Readiness — moved to top of sidebar */}
           {gates.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-5">
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Stage Readiness</h3>
+            <div className={`rounded-2xl border-2 p-5 ${isReady ? 'bg-green-50 border-green-400' : 'bg-white border-amber-300'}`}>
+              <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isReady ? 'text-green-600' : 'text-amber-600'}`}>Stage Readiness</h3>
               <div className="space-y-2.5 mb-4">
                 {gates.map((gate) => (
                   <button
@@ -617,7 +598,7 @@ export default function DealRoomHome() {
                 ))}
               </div>
               {isReady ? (
-                <div className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-2 flex items-center gap-2">
+                <div className="text-xs text-green-700 bg-green-100 rounded-lg px-3 py-2 flex items-center gap-2">
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -630,6 +611,25 @@ export default function DealRoomHome() {
               )}
             </div>
           )}
+
+          {/* Deal Status */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5">
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Deal Status</h3>
+            <div className="space-y-3">
+              {[
+                { label: 'Deal size', value: deal.dealSize },
+                { label: 'Deal type', value: deal.dealType },
+                { label: 'Days active', value: `${deal.daysActive} days` },
+                { label: 'Next meeting', value: deal.nextMeeting },
+                { label: 'Stage progress', value: `${doneGates} / ${totalGates} gates cleared`, highlight: doneGates < totalGates },
+              ].map(({ label, value, highlight }) => (
+                <div key={label} className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">{label}</span>
+                  <span className={`text-xs font-semibold ${highlight ? 'text-amber-600' : 'text-slate-800'}`}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Activity feed */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5">
