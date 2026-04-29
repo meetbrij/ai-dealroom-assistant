@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('juniorbanker@imcapital.com');
+  const [email, setEmail] = useState('arjun.nair@imcapital.com');
   const [password, setPassword] = useState('abcdefgh');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
